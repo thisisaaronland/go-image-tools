@@ -14,8 +14,9 @@ rmdeps:
 build:	fmt bin
 
 deps:
-	# @GOPATH=$(GOPATH) go get -u "github.com/MaxHalford/halfgone"
+	@GOPATH=$(GOPATH) go get -u "github.com/MaxHalford/halfgone"
 	@GOPATH=$(GOPATH) go get -u "github.com/nfnt/resize/"
+	@GOPATH=$(GOPATH) go get -u "github.com/iand/salience"
 
 vendor-deps: rmdeps deps
 	if test ! -d vendor; then mkdir vendor; fi
@@ -29,3 +30,4 @@ fmt:
 
 bin: 	self
 	@GOPATH=$(GOPATH) go build -o bin/halftone cmd/halftone.go
+	@GOPATH=$(GOPATH) go build -o bin/crop cmd/crop.go
