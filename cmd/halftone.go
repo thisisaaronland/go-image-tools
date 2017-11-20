@@ -41,6 +41,7 @@ func SaveImage(img image.Image, path string) error {
 func main() {
 
 	mode := flag.String("mode", "atkinson", "...")
+	scale_factor := flag.Float64("scale-factor", 2.0, "...")
 
 	flag.Parse()
 
@@ -64,11 +65,10 @@ func main() {
 		w := uint(dims.Max.X)
 		h := uint(dims.Max.Y)
 
-		half_w := uint(float64(w) / 2.0)
-		half_h := uint(float64(h) / 2.0)
+		scale_w := uint(float64(w) / *scale_factor)
+		scale_h := uint(float64(h) / *scale_factor)
 
-		thumb := resize.Thumbnail(half_w, half_h, im, resize.Lanczos3)
-
+		thumb := resize.Thumbnail(scale_w, scale_h, im, resize.Lanczos3)
 		grey := halfgone.ImageToGray(thumb)
 
 		switch *mode {
@@ -81,6 +81,7 @@ func main() {
 		}
 
 		dither := resize.Resize(w, h, grey, resize.Lanczos3)
+		dither = halfgone.ImageToGray(dither)
 
 		root := filepath.Dir(abs_path)
 		fname := filepath.Base(abs_path)
