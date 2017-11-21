@@ -5,7 +5,8 @@ prep:
 	if test -d pkg; then rm -rf pkg; fi
 
 self:   prep rmdeps
-	if test ! -d src; then mkdir src; fi
+	if test ! -d src/github.com/straup/go-image-tools; then mkdir -p src/github.com/straup/go-image-tools; fi
+	cp -r util src/github.com/straup/go-image-tools/
 	cp -r vendor/* src/
 
 rmdeps:
@@ -14,9 +15,10 @@ rmdeps:
 build:	fmt bin
 
 deps:
+	@GOPATH=$(GOPATH) go get -u "github.com/iand/salience"
+	@GOPATH=$(GOPATH) go get -u "github.com/jung-kurt/gofpdf"
 	@GOPATH=$(GOPATH) go get -u "github.com/MaxHalford/halfgone"
 	@GOPATH=$(GOPATH) go get -u "github.com/nfnt/resize/"
-	@GOPATH=$(GOPATH) go get -u "github.com/iand/salience"
 
 vendor-deps: rmdeps deps
 	if test ! -d vendor; then mkdir vendor; fi
@@ -29,5 +31,6 @@ fmt:
 	go fmt cmd/*.go
 
 bin: 	self
-	@GOPATH=$(GOPATH) go build -o bin/halftone cmd/halftone.go
 	@GOPATH=$(GOPATH) go build -o bin/crop cmd/crop.go
+	@GOPATH=$(GOPATH) go build -o bin/halftone cmd/halftone.go
+	@GOPATH=$(GOPATH) go build -o bin/picture-book cmd/picture-book.go

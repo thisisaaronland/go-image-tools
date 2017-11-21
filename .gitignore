@@ -3,3 +3,4 @@ pkg
 src
 !vendor/src
 bin
+*.pdf
