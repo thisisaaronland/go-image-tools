@@ -30,6 +30,8 @@ vendor-deps: rmdeps deps
 
 fmt:
 	go fmt cmd/*.go
+	go fmt picturebook/*.go
+	go fmt util/*.go
 
 bin: 	self
 	@GOPATH=$(GOPATH) go build -o bin/crop cmd/crop.go
