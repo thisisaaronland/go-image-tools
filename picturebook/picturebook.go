@@ -1,5 +1,7 @@
 package picturebook
 
+// DON'T TRY TO USE THIS PACKAGE YET... (20171121/thisisaaronland)
+
 import (
 	"context"
 	"github.com/jung-kurt/gofpdf"
