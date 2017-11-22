@@ -1,14 +1,15 @@
 package main
 
 import (
-       "context"
+	"context"
 	"flag"
 	"github.com/jung-kurt/gofpdf"
 	"github.com/straup/go-image-tools/util"
-	"github.com/whosonfirst/go-whosonfirst-index"	
+	"github.com/whosonfirst/go-whosonfirst-index"
 	"io"
 	"log"
 	"path/filepath"
+	"sync"
 )
 
 func main() {
@@ -73,6 +74,8 @@ func main() {
 	canvas_w := page_w - (border_left + border_right)
 	canvas_h := page_h - (border_top + border_bottom)
 
+	mu := new(sync.Mutex)
+
 	cb := func(fh io.Reader, ctx context.Context, args ...interface{}) error {
 
 		abs_path, err := index.PathForContext(ctx)
@@ -80,7 +83,7 @@ func main() {
 		if err != nil {
 			return err
 		}
-		
+
 		im, format, err := util.DecodeImage(abs_path)
 
 		if err != nil {
@@ -88,11 +91,15 @@ func main() {
 			return nil
 		}
 
+		mu.Lock()
+
 		info := pdf.GetImageInfo(abs_path)
 
 		if info == nil {
 			info = pdf.RegisterImage(abs_path, "")
 		}
+
+		mu.Unlock()
 
 		info.SetDpi(float64(*dpi))
 
@@ -165,10 +172,19 @@ func main() {
 		w = w / float64(*dpi)
 		h = h / float64(*dpi)
 
+		mu.Lock()
+
 		r_border := 0.01
+
+		if *debug {
+			log.Println((x - r_border), (y - r_border), (w + (r_border * 2)), (h + (r_border * 2)))
+		}
+
 		pdf.Rect((x - r_border), (y - r_border), (w + (r_border * 2)), (h + (r_border * 2)), "FD")
 
 		pdf.ImageOptions(abs_path, x, y, w, h, false, opts, 0, "")
+		mu.Unlock()
+
 		return nil
 	}
 
