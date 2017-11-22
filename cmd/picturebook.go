@@ -15,7 +15,8 @@ func main() {
 	var width = flag.Float64("width", 8.5, "...")
 	var height = flag.Float64("height", 11, "...")
 	var dpi = flag.Int("dpi", 150, "...")
-	var filename = flag.String("filename", "picture-book.pdf", "...")
+	var filename = flag.String("filename", "picturebook.pdf", "...")
+	var debug = flag.Bool("debug", false, "...")
 	// var mode = flag.String("mode", "files", "...")
 
 	flag.Parse()
@@ -53,7 +54,7 @@ func main() {
 	}
 
 	pdf.SetFillColor(0, 0, 0)
-	
+
 	// https://godoc.org/github.com/jung-kurt/gofpdf#ex-Fpdf-PageSize
 
 	w, h, _ := pdf.PageSize(1)
@@ -69,7 +70,7 @@ func main() {
 	canvas_w := page_w - (border_left + border_right)
 	canvas_h := page_h - (border_top + border_bottom)
 
-	for _, path := range flag.Args() {
+	for i, path := range flag.Args() {
 
 		abs_path, err := filepath.Abs(path)
 
@@ -100,22 +101,36 @@ func main() {
 		w := float64(dims.Max.X)
 		h := float64(dims.Max.Y)
 
-		// log.Printf("[%d] %0.2f x %0.2f %0.2f x %0.2f\n", i, canvas_w, canvas_h, w, h)
-
-		if w > h && w >= canvas_w {
-
-			ratio := canvas_w / w
-
-			w = canvas_w
-			h = h * ratio
-
+		if *debug {
+			log.Printf("[%d] %0.2f x %0.2f %0.2f x %0.2f\n", i, canvas_w, canvas_h, w, h)
 		}
 
-		if h > w && h >= canvas_h {
+		for {
 
-			ratio := canvas_h / h
-			w = w * ratio
-			h = canvas_h
+			if w >= canvas_w || h >= canvas_h {
+
+				if w > h || w > canvas_w {
+					ratio := canvas_w / w
+
+					w = canvas_w
+					h = h * ratio
+
+				} else {
+
+					ratio := canvas_h / h
+					w = w * ratio
+					h = canvas_h
+				}
+			}
+
+			if *debug {
+				log.Printf("[%d] %0.2f (%0.2f) x %0.2f (%0.2f)\n", i, w, canvas_w, h, canvas_h)
+			}
+
+			if w <= canvas_w && h <= canvas_h {
+				break
+			}
+
 		}
 
 		if w < canvas_w {
@@ -129,7 +144,9 @@ func main() {
 			y = y + border_top
 		}
 
-		// log.Printf("[%d] final %0.2f x %0.2f (%0.2f x %0.2f)\n", i, w, h, x, y)
+		if *debug {
+			log.Printf("[%d] final %0.2f x %0.2f (%0.2f x %0.2f)\n", i, w, h, x, y)
+		}
 
 		pdf.AddPage()
 

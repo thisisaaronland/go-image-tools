@@ -33,4 +33,4 @@ fmt:
 bin: 	self
 	@GOPATH=$(GOPATH) go build -o bin/crop cmd/crop.go
 	@GOPATH=$(GOPATH) go build -o bin/halftone cmd/halftone.go
-	@GOPATH=$(GOPATH) go build -o bin/picture-book cmd/picture-book.go
+	@GOPATH=$(GOPATH) go build -o bin/picturebook cmd/picturebook.go
