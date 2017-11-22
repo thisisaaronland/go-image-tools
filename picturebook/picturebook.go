@@ -1,7 +1,5 @@
 package picturebook
 
-// DON'T TRY TO USE THIS PACKAGE YET... (20171121/thisisaaronland)
-
 import (
 	"context"
 	"github.com/jung-kurt/gofpdf"
@@ -13,27 +11,123 @@ import (
 	"sync"
 )
 
-type PictureBookFilter func(string) (bool, error)
+type PictureBookFilterFunc func(string) (bool, error)
 
-type PictureBook struct {
-	pdf   *gofdpf.FPDF
-	mu    *sync.Mutex
-	Debug bool
+type PictureBookOptions struct {
+	Orientation string
+	Size        string
+	Width       float64
+	Height      float64
+	DPI         float64
+	Filter      PictureBookFilterFunc
 }
 
-func NewPictureBook() (*PictureBook, error) {
+type PictureBookBorder struct {
+	Top    float64
+	Bottom float64
+	Left   float64
+	Right  float64
+}
+
+type PictureBookCanvas struct {
+	Width  float64
+	Height float64
+}
+
+type PictureBook struct {
+	PDF     *gofdpf.FPDF
+	Mutex   *sync.Mutex
+	Border  PictureBookBorder
+	Canvas  PictureBookCanvas
+	Options PictureBookOptions
+	Debug   bool
+}
+
+func NewPictureBookDefaultOptions() PictureBookOptions {
+
+	filter := func(string) (bool, error) {
+
+		return ok, nil
+	}
+
+	opts := PictureBookOptions{
+		Orientation: "P",
+		Size:        "letter",
+		Width:       0.0,
+		Height:      0.0,
+		DPI:         150.0,
+		Filter:      filter,
+	}
+
+	return opts
+}
+
+func NewPictureBook(opts PictureBookOptions) (*PictureBook, error) {
+
+	var pdf *gofpdf.Fpdf
+
+	if *size == "custom" {
+
+		sz := gofpdf.SizeType{
+			Wd: opts.Width,
+			Ht: opts.Height,
+		}
+
+		init := gofpdf.InitType{
+			OrientationStr: opts.Orientation,
+			UnitStr:        "in",
+			SizeStr:        "",
+			Size:           sz,
+			FontDirStr:     "",
+		}
+
+		pdf = gofpdf.NewCustom(&init)
+
+	} else {
+
+		pdf = gofpdf.New(opts.Orientation, "in", opts.Size, "")
+	}
+
+	w, h, _ := pdf.PageSize(1)
+
+	page_w := w * opts.DPI
+	page_h := h * opts.DPI
+
+	border_top := 1.0 * opts.DPI
+	border_bottom := border_top * 1.5
+	border_left := border_top * 0.8
+	border_right := border_top * 0.8
+
+	canvas_w := page_w - (border_left + border_right)
+	canvas_h := page_h - (border_top + border_bottom)
+
+	b := PictureBookBorder{
+		Top:    border_top,
+		Bottom: border_bottom,
+		Left:   border_left,
+		Right:  border_right,
+	}
+
+	c := PictureBookCanvas{
+		Width:  canvas_w,
+		Height: pb.Canvas.Height,
+	}
 
 	mu := new(sync.Mutex)
 
 	pb := PictureBook{
-		Debug: false,
-		mu:    mu,
+		Debug:   false,
+		PDF:     pdf,
+		Mutex:   mu,
+		Border:  b,
+		Canvas:  c,
+		Options: opts,
 	}
 
 	return &pb, nil
 }
 
-func (pb *PictureBook) AddPictures(mode string, filter PictureBookFilter, paths []string) error {
+func (pb *PictureBook) AddPictures(mode string, paths []string) error {
 
 	cb := func(fh io.Reader, ctx context.Context, args ...interface{}) error {
 
@@ -43,7 +137,7 @@ func (pb *PictureBook) AddPictures(mode string, filter PictureBookFilter, paths 
 			return err
 		}
 
-		ok, err = filter(abs_path)
+		ok, err = pb.Options.Filter(abs_path)
 
 		if err != nil {
 			return err
@@ -73,67 +167,67 @@ func (pb *PictureBook) AddPicture(abs_path string) error {
 		return nil
 	}
 
-	pb.mu.Lock()
+	pb.Mutex.Lock()
 
-	info := pdf.GetImageInfo(abs_path)
+	info := pb.PDF.GetImageInfo(abs_path)
 
 	if info == nil {
-		info = pdf.RegisterImage(abs_path, "")
+		info = pb.PDF.RegisterImage(abs_path, "")
 	}
 
-	pb.mu.Unlock()
+	pb.Mutex.Unlock()
 
-	info.SetDpi(float64(*dpi))
+	info.SetDpi(pb.Options.DPI)
 
 	dims := im.Bounds()
 
-	x := border_left
-	y := border_top
+	x := pb.Border.Left
+	y := pb.Border.Top
 
 	w := float64(dims.Max.X)
 	h := float64(dims.Max.Y)
 
 	if *debug {
-		log.Printf("%0.2f x %0.2f %0.2f x %0.2f\n", canvas_w, canvas_h, w, h)
+		log.Printf("%0.2f x %0.2f %0.2f x %0.2f\n", pb.Canvas.Width, pb.Canvas.Height, w, h)
 	}
 
 	for {
 
-		if w >= canvas_w || h >= canvas_h {
+		if w >= pb.Canvas.Width || h >= pb.Canvas.Height {
 
-			if w > h || w > canvas_w {
-				ratio := canvas_w / w
+			if w > h || w > pb.Canvas.Width {
+				ratio := pb.Canvas.Width / w
 
-				w = canvas_w
+				w = pb.Canvas.Width
 				h = h * ratio
 
 			} else {
 
-				ratio := canvas_h / h
+				ratio := pb.Canvas.Height / h
 				w = w * ratio
-				h = canvas_h
+				h = pb.Canvas.Height
 			}
 		}
 
 		if *debug {
-			log.Printf("%0.2f (%0.2f) x %0.2f (%0.2f)\n", w, canvas_w, h, canvas_h)
+			log.Printf("%0.2f (%0.2f) x %0.2f (%0.2f)\n", w, pb.Canvas.Width, h, pb.Canvas.Height)
 		}
 
-		if w <= canvas_w && h <= canvas_h {
+		if w <= pb.Canvas.Width && h <= pb.Canvas.Height {
 			break
 		}
 
 	}
 
-	if w < canvas_w {
+	if w < pb.Canvas.Width {
 
-		padding := canvas_w - w
+		padding := pb.Canvas.Width - w
 		x = x + (padding / 2.0)
 	}
 
-	if h < (canvas_h - border_top) {
+	if h < (pb.Canvas.Height - pb.Border.Top) {
 
-		y = y + border_top
+		y = y + pb.Border.Top
 	}
 
 	if *debug {
@@ -149,12 +243,12 @@ func (pb *PictureBook) AddPicture(abs_path string) error {
 		ImageType: format,
 	}
 
-	x = x / float64(*dpi)
-	y = y / float64(*dpi)
-	w = w / float64(*dpi)
-	h = h / float64(*dpi)
+	x = x / pb.Options.DPI
+	y = y / pb.Options.DPI
+	w = w / pb.Options.DPI
+	h = h / pb.Options.DPI
 
-	mu.Lock()
+	pb.Mutex.Lock()
 
 	r_border := 0.01
 
@@ -162,15 +256,15 @@ func (pb *PictureBook) AddPicture(abs_path string) error {
 		log.Println((x - r_border), (y - r_border), (w + (r_border * 2)), (h + (r_border * 2)))
 	}
 
-	pdf.Rect((x - r_border), (y - r_border), (w + (r_border * 2)), (h + (r_border * 2)), "FD")
+	pb.PDF.Rect((x - r_border), (y - r_border), (w + (r_border * 2)), (h + (r_border * 2)), "FD")
 
-	pdf.ImageOptions(abs_path, x, y, w, h, false, opts, 0, "")
-	mu.Unlock()
+	pb.PDF.ImageOptions(abs_path, x, y, w, h, false, opts, 0, "")
+	pb.Mutex.Unlock()
 
 	return nil
 }
 
 func (pb *PictureBook) Save(path string) error {
 
-	return pb.pdf.OutputFileAndClose(path)
+	return pb.PDF.OutputFileAndClose(path)
 }
