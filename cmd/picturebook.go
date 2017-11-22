@@ -18,7 +18,12 @@ func main() {
 	var filename = flag.String("filename", "picturebook.pdf", "...")
 	var debug = flag.Bool("debug", false, "...")
 	var mode = flag.String("mode", "files", "...")
-	var suffix = flag.String("with-suffix", "", "...")
+
+	var include picturebook.IncludeFlag
+	var exclude picturebook.ExcludeFlag
+
+	flag.Var(&include, "include", "...")
+	flag.Var(&exclude, "exclude", "...")
 
 	flag.Parse()
 
@@ -30,16 +35,26 @@ func main() {
 	opts.DPI = *dpi
 	opts.Debug = *debug
 
-	if *suffix != "" {
+	filter := func(path string) (bool, error) {
 
-		filter := func(path string) (bool, error) {
-
-			ok := strings.HasSuffix(path, *suffix)
-			return ok, nil
+		// these will eventually become golang regexp thingies...
+		
+		for _, suffix := range include {
+			if !strings.HasSuffix(path, suffix) {
+				return false, nil
+			}
 		}
 
-		opts.Filter = filter
+		for _, suffix := range exclude {
+			if strings.HasSuffix(path, suffix) {
+				return false, nil
+			}
+		}
+
+		return true, nil
 	}
+
+	opts.Filter = filter
 
 	pb, err := picturebook.NewPictureBook(opts)
 
