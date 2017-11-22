@@ -186,7 +186,7 @@ func (pb *PictureBook) AddPicture(abs_path string) error {
 	h := float64(dims.Max.Y)
 
 	if pb.Options.Debug {
-		log.Printf("%0.2f x %0.2f %0.2f x %0.2f\n", pb.Canvas.Width, pb.Canvas.Height, w, h)
+		log.Printf("canvas: %0.2f x %0.2f image: %0.2f x %0.2f\n", pb.Canvas.Width, pb.Canvas.Height, w, h)
 	}
 
 	for {
@@ -199,7 +199,9 @@ func (pb *PictureBook) AddPicture(abs_path string) error {
 				w = pb.Canvas.Width
 				h = h * ratio
 
-			} else {
+			}
+
+			if h > w || h > pb.Canvas.Height {
 
 				ratio := pb.Canvas.Height / h
 				w = w * ratio
@@ -208,7 +210,7 @@ func (pb *PictureBook) AddPicture(abs_path string) error {
 		}
 
 		if pb.Options.Debug {
-			log.Printf("%0.2f (%0.2f) x %0.2f (%0.2f)\n", w, pb.Canvas.Width, h, pb.Canvas.Height)
+			log.Printf("w: %0.2f (max w: %0.2f)  h: %0.2f (max h: %0.2f)\n", w, pb.Canvas.Width, h, pb.Canvas.Height)
 		}
 
 		if w <= pb.Canvas.Width && h <= pb.Canvas.Height {
@@ -223,7 +225,7 @@ func (pb *PictureBook) AddPicture(abs_path string) error {
 		x = x + (padding / 2.0)
 	}
 
-	if h < (pb.Canvas.Height - pb.Border.Top) {
+	if pb.Canvas.Height > pb.Canvas.Width && h < (pb.Canvas.Height - pb.Border.Top) {
 
 		y = y + pb.Border.Top
 	}
