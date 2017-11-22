@@ -5,7 +5,8 @@ import (
        "image"
 	_ "image/gif"
 	_ "image/jpeg"
-	_ "image/png"       
+	_ "image/png"
+	"io"
        "os"
        "path/filepath"
 )
@@ -27,6 +28,11 @@ func DecodeImage(path string) (image.Image, string, error) {
 	}
 
 	defer fh.Close()
+
+	return DecodeImageFromReader(fh)
+}
+
+func DecodeImageFromReader(fh io.Reader) (image.Image, string, error) {
 
 	return image.Decode(bufio.NewReader(fh))
 }

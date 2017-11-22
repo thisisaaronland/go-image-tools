@@ -1,9 +1,12 @@
 package main
 
 import (
+       "context"
 	"flag"
 	"github.com/jung-kurt/gofpdf"
 	"github.com/straup/go-image-tools/util"
+	"github.com/whosonfirst/go-whosonfirst-index"	
+	"io"
 	"log"
 	"path/filepath"
 )
@@ -17,7 +20,7 @@ func main() {
 	var dpi = flag.Int("dpi", 150, "...")
 	var filename = flag.String("filename", "picturebook.pdf", "...")
 	var debug = flag.Bool("debug", false, "...")
-	// var mode = flag.String("mode", "files", "...")
+	var mode = flag.String("mode", "files", "...")
 
 	flag.Parse()
 
@@ -70,19 +73,19 @@ func main() {
 	canvas_w := page_w - (border_left + border_right)
 	canvas_h := page_h - (border_top + border_bottom)
 
-	for i, path := range flag.Args() {
+	cb := func(fh io.Reader, ctx context.Context, args ...interface{}) error {
 
-		abs_path, err := filepath.Abs(path)
+		abs_path, err := index.PathForContext(ctx)
 
 		if err != nil {
-			log.Fatal(err)
+			return err
 		}
-
+		
 		im, format, err := util.DecodeImage(abs_path)
 
 		if err != nil {
 			log.Println(err)
-			continue
+			return nil
 		}
 
 		info := pdf.GetImageInfo(abs_path)
@@ -102,7 +105,7 @@ func main() {
 		h := float64(dims.Max.Y)
 
 		if *debug {
-			log.Printf("[%d] %0.2f x %0.2f %0.2f x %0.2f\n", i, canvas_w, canvas_h, w, h)
+			log.Printf("%0.2f x %0.2f %0.2f x %0.2f\n", canvas_w, canvas_h, w, h)
 		}
 
 		for {
@@ -124,7 +127,7 @@ func main() {
 			}
 
 			if *debug {
-				log.Printf("[%d] %0.2f (%0.2f) x %0.2f (%0.2f)\n", i, w, canvas_w, h, canvas_h)
+				log.Printf("%0.2f (%0.2f) x %0.2f (%0.2f)\n", w, canvas_w, h, canvas_h)
 			}
 
 			if w <= canvas_w && h <= canvas_h {
@@ -145,7 +148,7 @@ func main() {
 		}
 
 		if *debug {
-			log.Printf("[%d] final %0.2f x %0.2f (%0.2f x %0.2f)\n", i, w, h, x, y)
+			log.Printf("final %0.2f x %0.2f (%0.2f x %0.2f)\n", w, h, x, y)
 		}
 
 		pdf.AddPage()
@@ -166,7 +169,18 @@ func main() {
 		pdf.Rect((x - r_border), (y - r_border), (w + (r_border * 2)), (h + (r_border * 2)), "FD")
 
 		pdf.ImageOptions(abs_path, x, y, w, h, false, opts, 0, "")
+		return nil
 	}
+
+	sources := flag.Args()
+
+	idx, err := index.NewIndexer(*mode, cb)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	err = idx.IndexPaths(sources)
 
 	err = pdf.OutputFileAndClose(abs_filename)
 

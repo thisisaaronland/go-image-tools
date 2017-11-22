@@ -19,6 +19,7 @@ deps:
 	@GOPATH=$(GOPATH) go get -u "github.com/jung-kurt/gofpdf"
 	@GOPATH=$(GOPATH) go get -u "github.com/MaxHalford/halfgone"
 	@GOPATH=$(GOPATH) go get -u "github.com/nfnt/resize/"
+	@GOPATH=$(GOPATH) go get -u "github.com/whosonfirst/go-whosonfirst-index/"
 
 vendor-deps: rmdeps deps
 	if test ! -d vendor; then mkdir vendor; fi
