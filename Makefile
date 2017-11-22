@@ -6,6 +6,7 @@ prep:
 
 self:   prep rmdeps
 	if test ! -d src/github.com/straup/go-image-tools; then mkdir -p src/github.com/straup/go-image-tools; fi
+	cp -r picturebook src/github.com/straup/go-image-tools/
 	cp -r util src/github.com/straup/go-image-tools/
 	cp -r vendor/* src/
 

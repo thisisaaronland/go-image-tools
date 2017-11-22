@@ -7,7 +7,6 @@ import (
 	"github.com/whosonfirst/go-whosonfirst-index"
 	"io"
 	"log"
-	"path/filepath"
 	"sync"
 )
 
@@ -20,6 +19,7 @@ type PictureBookOptions struct {
 	Height      float64
 	DPI         float64
 	Filter      PictureBookFilterFunc
+	Debug       bool
 }
 
 type PictureBookBorder struct {
@@ -35,19 +35,17 @@ type PictureBookCanvas struct {
 }
 
 type PictureBook struct {
-	PDF     *gofdpf.FPDF
+	PDF     *gofpdf.Fpdf
 	Mutex   *sync.Mutex
 	Border  PictureBookBorder
 	Canvas  PictureBookCanvas
 	Options PictureBookOptions
-	Debug   bool
 }
 
 func NewPictureBookDefaultOptions() PictureBookOptions {
 
 	filter := func(string) (bool, error) {
-
-		return ok, nil
+		return true, nil
 	}
 
 	opts := PictureBookOptions{
@@ -57,6 +55,7 @@ func NewPictureBookDefaultOptions() PictureBookOptions {
 		Height:      0.0,
 		DPI:         150.0,
 		Filter:      filter,
+		Debug:       false,
 	}
 
 	return opts
@@ -66,7 +65,7 @@ func NewPictureBook(opts PictureBookOptions) (*PictureBook, error) {
 
 	var pdf *gofpdf.Fpdf
 
-	if *size == "custom" {
+	if opts.Size == "custom" {
 
 		sz := gofpdf.SizeType{
 			Wd: opts.Width,
@@ -110,13 +109,12 @@ func NewPictureBook(opts PictureBookOptions) (*PictureBook, error) {
 
 	c := PictureBookCanvas{
 		Width:  canvas_w,
-		Height: pb.Canvas.Height,
+		Height: canvas_h,
 	}
 
 	mu := new(sync.Mutex)
 
 	pb := PictureBook{
-		Debug:   false,
 		PDF:     pdf,
 		Mutex:   mu,
 		Border:  b,
@@ -137,7 +135,7 @@ func (pb *PictureBook) AddPictures(mode string, paths []string) error {
 			return err
 		}
 
-		ok, err = pb.Options.Filter(abs_path)
+		ok, err := pb.Options.Filter(abs_path)
 
 		if err != nil {
 			return err
@@ -156,7 +154,7 @@ func (pb *PictureBook) AddPictures(mode string, paths []string) error {
 		return err
 	}
 
-	return idx.IndexPaths(sources)
+	return idx.IndexPaths(paths)
 }
 
 func (pb *PictureBook) AddPicture(abs_path string) error {
@@ -187,7 +185,7 @@ func (pb *PictureBook) AddPicture(abs_path string) error {
 	w := float64(dims.Max.X)
 	h := float64(dims.Max.Y)
 
-	if *debug {
+	if pb.Options.Debug {
 		log.Printf("%0.2f x %0.2f %0.2f x %0.2f\n", pb.Canvas.Width, pb.Canvas.Height, w, h)
 	}
 
@@ -209,7 +207,7 @@ func (pb *PictureBook) AddPicture(abs_path string) error {
 			}
 		}
 
-		if *debug {
+		if pb.Options.Debug {
 			log.Printf("%0.2f (%0.2f) x %0.2f (%0.2f)\n", w, pb.Canvas.Width, h, pb.Canvas.Height)
 		}
 
@@ -230,11 +228,11 @@ func (pb *PictureBook) AddPicture(abs_path string) error {
 		y = y + pb.Border.Top
 	}
 
-	if *debug {
+	if pb.Options.Debug {
 		log.Printf("final %0.2f x %0.2f (%0.2f x %0.2f)\n", w, h, x, y)
 	}
 
-	pdf.AddPage()
+	pb.PDF.AddPage()
 
 	// https://godoc.org/github.com/jung-kurt/gofpdf#ImageOptions
 
@@ -252,7 +250,7 @@ func (pb *PictureBook) AddPicture(abs_path string) error {
 
 	r_border := 0.01
 
-	if *debug {
+	if pb.Options.Debug {
 		log.Println((x - r_border), (y - r_border), (w + (r_border * 2)), (h + (r_border * 2)))
 	}
 
