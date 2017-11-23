@@ -94,8 +94,8 @@ func NewPictureBook(opts PictureBookOptions) (*PictureBook, error) {
 
 	border_top := 1.0 * opts.DPI
 	border_bottom := border_top * 1.5
-	border_left := border_top * 0.8
-	border_right := border_top * 0.8
+	border_left := border_top * 1.0
+	border_right := border_top * 1.0
 
 	canvas_w := page_w - (border_left + border_right)
 	canvas_h := page_h - (border_top + border_bottom)
@@ -159,21 +159,20 @@ func (pb *PictureBook) AddPictures(mode string, paths []string) error {
 
 func (pb *PictureBook) AddPicture(abs_path string) error {
 
+	pb.Mutex.Lock()
+	defer pb.Mutex.Unlock()
+	
 	im, format, err := util.DecodeImage(abs_path)
 
 	if err != nil {
 		return nil
 	}
 
-	pb.Mutex.Lock()
-
 	info := pb.PDF.GetImageInfo(abs_path)
 
 	if info == nil {
 		info = pb.PDF.RegisterImage(abs_path, "")
-	}
-
-	pb.Mutex.Unlock()
+	}	
 
 	info.SetDpi(pb.Options.DPI)
 
@@ -225,7 +224,8 @@ func (pb *PictureBook) AddPicture(abs_path string) error {
 		x = x + (padding / 2.0)
 	}
 
-	if pb.Canvas.Height > pb.Canvas.Width && h < (pb.Canvas.Height - pb.Border.Top) {
+	// if pb.Canvas.Height > pb.Canvas.Width && h < (pb.Canvas.Height - pb.Border.Top) {
+	if h < (pb.Canvas.Height - pb.Border.Top) {	
 
 		y = y + pb.Border.Top
 	}
@@ -248,8 +248,6 @@ func (pb *PictureBook) AddPicture(abs_path string) error {
 	w = w / pb.Options.DPI
 	h = h / pb.Options.DPI
 
-	pb.Mutex.Lock()
-
 	r_border := 0.01
 
 	if pb.Options.Debug {
@@ -259,7 +257,6 @@ func (pb *PictureBook) AddPicture(abs_path string) error {
 	pb.PDF.Rect((x - r_border), (y - r_border), (w + (r_border * 2)), (h + (r_border * 2)), "FD")
 
 	pb.PDF.ImageOptions(abs_path, x, y, w, h, false, opts, 0, "")
-	pb.Mutex.Unlock()
 
 	return nil
 }
