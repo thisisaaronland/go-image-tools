@@ -5,7 +5,6 @@ import (
 	"github.com/straup/go-image-tools/picturebook"
 	"log"
 	"os"
-	"strings"
 )
 
 func main() {
@@ -19,11 +18,13 @@ func main() {
 	var debug = flag.Bool("debug", false, "...")
 	var mode = flag.String("mode", "files", "...")
 
-	var include picturebook.IncludeFlag
-	var exclude picturebook.ExcludeFlag
+	var include picturebook.RegexpFlag
+	var exclude picturebook.RegexpFlag
+	var preprocess picturebook.PreProcessFlag
 
 	flag.Var(&include, "include", "...")
 	flag.Var(&exclude, "exclude", "...")
+	flag.Var(&preprocess, "pre-process", "...")
 
 	flag.Parse()
 
@@ -37,16 +38,16 @@ func main() {
 
 	filter := func(path string) (bool, error) {
 
-		// these will eventually become golang regexp thingies...
-		
-		for _, suffix := range include {
-			if !strings.HasSuffix(path, suffix) {
+		for _, pat := range include {
+
+			if !pat.MatchString(path) {
 				return false, nil
 			}
 		}
 
-		for _, suffix := range exclude {
-			if strings.HasSuffix(path, suffix) {
+		for _, pat := range exclude {
+
+			if pat.MatchString(path) {
 				return false, nil
 			}
 		}

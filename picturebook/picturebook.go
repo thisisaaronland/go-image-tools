@@ -10,8 +10,6 @@ import (
 	"sync"
 )
 
-type PictureBookFilterFunc func(string) (bool, error)
-
 type PictureBookOptions struct {
 	Orientation string
 	Size        string
@@ -19,6 +17,7 @@ type PictureBookOptions struct {
 	Height      float64
 	DPI         float64
 	Filter      PictureBookFilterFunc
+	PreProcess  PictureBookPreProcessFunc
 	Debug       bool
 }
 
@@ -44,9 +43,8 @@ type PictureBook struct {
 
 func NewPictureBookDefaultOptions() PictureBookOptions {
 
-	filter := func(string) (bool, error) {
-		return true, nil
-	}
+	filter := DefaultFilterFunc
+	prep := DefaultPreProcessFunc
 
 	opts := PictureBookOptions{
 		Orientation: "P",
@@ -55,6 +53,7 @@ func NewPictureBookDefaultOptions() PictureBookOptions {
 		Height:      0.0,
 		DPI:         150.0,
 		Filter:      filter,
+		PreProcess:  prep,
 		Debug:       false,
 	}
 
@@ -145,7 +144,13 @@ func (pb *PictureBook) AddPictures(mode string, paths []string) error {
 			return nil
 		}
 
-		return pb.AddPicture(abs_path)
+		fh, err = pb.Options.PreProcess(fh, ctx)
+
+		if err != nil {
+			return err
+		}
+
+		return pb.AddPicture(fh, ctx)
 	}
 
 	idx, err := index.NewIndexer(mode, cb)
@@ -157,22 +162,30 @@ func (pb *PictureBook) AddPictures(mode string, paths []string) error {
 	return idx.IndexPaths(paths)
 }
 
-func (pb *PictureBook) AddPicture(abs_path string) error {
+func (pb *PictureBook) AddPicture(fh io.Reader, ctx context.Context) error {
 
 	pb.Mutex.Lock()
 	defer pb.Mutex.Unlock()
-	
-	im, format, err := util.DecodeImage(abs_path)
+
+	// see notes below - it would be nice to remove this...
+	abs_path, err := index.PathForContext(ctx)
+
+	if err != nil {
+		return err
+	}
+
+	im, format, err := util.DecodeImageFromReader(fh)
 
 	if err != nil {
 		return nil
 	}
 
+	// please update to not require path...maybe not possible?
 	info := pb.PDF.GetImageInfo(abs_path)
 
 	if info == nil {
 		info = pb.PDF.RegisterImage(abs_path, "")
-	}	
+	}
 
 	info.SetDpi(pb.Options.DPI)
 
@@ -192,20 +205,33 @@ func (pb *PictureBook) AddPicture(abs_path string) error {
 
 		if w >= pb.Canvas.Width || h >= pb.Canvas.Height {
 
-			if w > h || w > pb.Canvas.Width {
-				ratio := pb.Canvas.Width / w
+			if w > h {
 
+				ratio := pb.Canvas.Width / w
 				w = pb.Canvas.Width
 				h = h * ratio
 
-			}
+			} else if w > pb.Canvas.Width {
 
-			if h > w || h > pb.Canvas.Height {
+				ratio := pb.Canvas.Width / w
+				w = pb.Canvas.Width
+				h = h * ratio
+
+			} else if h > w {
 
 				ratio := pb.Canvas.Height / h
 				w = w * ratio
 				h = pb.Canvas.Height
+
+			} else if h > pb.Canvas.Height {
+
+				ratio := pb.Canvas.Height / h
+				w = w * ratio
+				h = pb.Canvas.Height
+
+			} else {
 			}
+
 		}
 
 		if pb.Options.Debug {
@@ -225,7 +251,7 @@ func (pb *PictureBook) AddPicture(abs_path string) error {
 	}
 
 	// if pb.Canvas.Height > pb.Canvas.Width && h < (pb.Canvas.Height - pb.Border.Top) {
-	if h < (pb.Canvas.Height - pb.Border.Top) {	
+	if h < (pb.Canvas.Height - pb.Border.Top) {
 
 		y = y + pb.Border.Top
 	}

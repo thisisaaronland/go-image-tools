@@ -1,30 +1,43 @@
 package picturebook
 
 import (
+	"fmt"
+	"regexp"
 	"strings"
 )
 
-// please make these precompile golang regexp thingies
-// (20171122/thisisaaronland)
+type RegexpFlag []*regexp.Regexp
 
-type IncludeFlag []string
+func (i *RegexpFlag) String() string {
 
-func (i *IncludeFlag) String() string {
-	return strings.Join(*i, "\n")
+	patterns := make([]string, 0)
+
+	for _, re := range *i {
+		patterns = append(patterns, fmt.Sprintf("%v", re))
+	}
+
+	return strings.Join(patterns, "\n")
 }
 
-func (i *IncludeFlag) Set(value string) error {
-	*i = append(*i, value)
+func (i *RegexpFlag) Set(value string) error {
+
+	re, err := regexp.Compile(value)
+
+	if err != nil {
+		return err
+	}
+
+	*i = append(*i, re)
 	return nil
 }
 
-type ExcludeFlag []string
+type PreProcessFlag []string
 
-func (e *ExcludeFlag) String() string {
-	return strings.Join(*e, "\n")
+func (p *PreProcessFlag) String() string {
+	return strings.Join(*p, "\n")
 }
 
-func (e *ExcludeFlag) Set(value string) error {
-	*e = append(*e, value)
+func (p *PreProcessFlag) Set(value string) error {
+	*p = append(*p, value)
 	return nil
 }
