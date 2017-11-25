@@ -6,6 +6,7 @@ prep:
 
 self:   prep rmdeps
 	if test ! -d src/github.com/straup/go-image-tools; then mkdir -p src/github.com/straup/go-image-tools; fi
+	cp -r halftone src/github.com/straup/go-image-tools/
 	cp -r picturebook src/github.com/straup/go-image-tools/
 	cp -r util src/github.com/straup/go-image-tools/
 	cp -r vendor/* src/
@@ -31,6 +32,7 @@ vendor-deps: rmdeps deps
 
 fmt:
 	go fmt cmd/*.go
+	go fmt halftone/*.go
 	go fmt picturebook/*.go
 	go fmt util/*.go
 

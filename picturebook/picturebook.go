@@ -3,10 +3,10 @@ package picturebook
 import (
 	"context"
 	"github.com/jung-kurt/gofpdf"
-	"github.com/straup/go-image-tools/util"
 	"github.com/whosonfirst/go-whosonfirst-index"
 	"io"
 	"log"
+	_ "os"
 	"sync"
 )
 
@@ -39,6 +39,7 @@ type PictureBook struct {
 	Border  PictureBookBorder
 	Canvas  PictureBookCanvas
 	Options PictureBookOptions
+	pages   int
 }
 
 func NewPictureBookDefaultOptions() PictureBookOptions {
@@ -119,6 +120,7 @@ func NewPictureBook(opts PictureBookOptions) (*PictureBook, error) {
 		Border:  b,
 		Canvas:  c,
 		Options: opts,
+		pages:   0,
 	}
 
 	return &pb, nil
@@ -144,13 +146,24 @@ func (pb *PictureBook) AddPictures(mode string, paths []string) error {
 			return nil
 		}
 
-		fh, err = pb.Options.PreProcess(fh, ctx)
+		processed_path, err := pb.Options.PreProcess(abs_path)
+
+		if err != nil {
+			return nil
+		}
+
+		pb.Mutex.Lock()
+		pb.pages += 1
+		pagenum := pb.pages
+		pb.Mutex.Unlock()
+
+		err = pb.AddPicture(pagenum, processed_path)
 
 		if err != nil {
 			return err
 		}
 
-		return pb.AddPicture(fh, ctx)
+		return nil
 	}
 
 	idx, err := index.NewIndexer(mode, cb)
@@ -162,25 +175,11 @@ func (pb *PictureBook) AddPictures(mode string, paths []string) error {
 	return idx.IndexPaths(paths)
 }
 
-func (pb *PictureBook) AddPicture(fh io.Reader, ctx context.Context) error {
+func (pb *PictureBook) AddPicture(pagenum int, abs_path string) error {
 
 	pb.Mutex.Lock()
 	defer pb.Mutex.Unlock()
 
-	// see notes below - it would be nice to remove this...
-	abs_path, err := index.PathForContext(ctx)
-
-	if err != nil {
-		return err
-	}
-
-	im, format, err := util.DecodeImageFromReader(fh)
-
-	if err != nil {
-		return nil
-	}
-
-	// please update to not require path...maybe not possible?
 	info := pb.PDF.GetImageInfo(abs_path)
 
 	if info == nil {
@@ -189,16 +188,18 @@ func (pb *PictureBook) AddPicture(fh io.Reader, ctx context.Context) error {
 
 	info.SetDpi(pb.Options.DPI)
 
-	dims := im.Bounds()
+	w := info.Width() * pb.Options.DPI
+	h := info.Height() * pb.Options.DPI
+
+	if pb.Options.Debug {
+		log.Printf("[%d] %s %02.f x %02.f\n", pagenum, abs_path, w, h)
+	}
 
 	x := pb.Border.Left
 	y := pb.Border.Top
 
-	w := float64(dims.Max.X)
-	h := float64(dims.Max.Y)
-
 	if pb.Options.Debug {
-		log.Printf("canvas: %0.2f x %0.2f image: %0.2f x %0.2f\n", pb.Canvas.Width, pb.Canvas.Height, w, h)
+		log.Printf("[%d] canvas: %0.2f x %0.2f image: %0.2f x %0.2f\n", pagenum, pb.Canvas.Width, pb.Canvas.Height, w, h)
 	}
 
 	for {
@@ -235,7 +236,7 @@ func (pb *PictureBook) AddPicture(fh io.Reader, ctx context.Context) error {
 		}
 
 		if pb.Options.Debug {
-			log.Printf("w: %0.2f (max w: %0.2f)  h: %0.2f (max h: %0.2f)\n", w, pb.Canvas.Width, h, pb.Canvas.Height)
+			log.Printf("[%d] w: %0.2f (max w: %0.2f)  h: %0.2f (max h: %0.2f)\n", pagenum, w, pb.Canvas.Width, h, pb.Canvas.Height)
 		}
 
 		if w <= pb.Canvas.Width && h <= pb.Canvas.Height {
@@ -257,7 +258,7 @@ func (pb *PictureBook) AddPicture(fh io.Reader, ctx context.Context) error {
 	}
 
 	if pb.Options.Debug {
-		log.Printf("final %0.2f x %0.2f (%0.2f x %0.2f)\n", w, h, x, y)
+		log.Printf("[%d] final %0.2f x %0.2f (%0.2f x %0.2f)\n", pagenum, w, h, x, y)
 	}
 
 	pb.PDF.AddPage()
@@ -266,7 +267,7 @@ func (pb *PictureBook) AddPicture(fh io.Reader, ctx context.Context) error {
 
 	opts := gofpdf.ImageOptions{
 		ReadDpi:   false,
-		ImageType: format,
+		ImageType: "",
 	}
 
 	x = x / pb.Options.DPI
@@ -276,9 +277,11 @@ func (pb *PictureBook) AddPicture(fh io.Reader, ctx context.Context) error {
 
 	r_border := 0.01
 
-	if pb.Options.Debug {
-		log.Println((x - r_border), (y - r_border), (w + (r_border * 2)), (h + (r_border * 2)))
-	}
+	/*
+		if pb.Options.Debug {
+			log.Println((x - r_border), (y - r_border), (w + (r_border * 2)), (h + (r_border * 2)))
+		}
+	*/
 
 	pb.PDF.Rect((x - r_border), (y - r_border), (w + (r_border * 2)), (h + (r_border * 2)), "FD")
 

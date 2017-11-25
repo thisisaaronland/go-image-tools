@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"flag"
 	"github.com/straup/go-image-tools/picturebook"
 	"log"
@@ -8,6 +9,17 @@ import (
 )
 
 func main() {
+
+	err := Picturebook()
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	os.Exit(0)
+}
+
+func Picturebook() error {
 
 	var orientation = flag.String("orientation", "P", "...")
 	var size = flag.String("size", "letter", "...")
@@ -36,6 +48,24 @@ func main() {
 	opts.DPI = *dpi
 	opts.Debug = *debug
 
+	processed := make([]string, 0)
+
+	defer func() {
+		for _, p := range processed {
+
+			go func(p string) {
+
+				_, err := os.Stat(p)
+
+				if os.IsNotExist(err) {
+					return
+				}
+
+				os.Remove(p)
+			}(p)
+		}
+	}()
+
 	filter := func(path string) (bool, error) {
 
 		for _, pat := range include {
@@ -55,12 +85,39 @@ func main() {
 		return true, nil
 	}
 
+	prep := func(path string) (string, error) {
+
+		final := path
+
+		for _, proc := range preprocess {
+
+			switch proc {
+			case "halftone":
+
+				processed_path, err := picturebook.HalftonePreProcessFunc(final)
+
+				if err != nil {
+					return "", err
+				}
+
+				processed = append(processed, processed_path)
+				final = processed_path
+
+			default:
+				return "", errors.New("Invalid or unsupported process")
+			}
+		}
+
+		return final, nil
+	}
+
 	opts.Filter = filter
+	opts.PreProcess = prep
 
 	pb, err := picturebook.NewPictureBook(opts)
 
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 
 	sources := flag.Args()
@@ -68,14 +125,14 @@ func main() {
 	err = pb.AddPictures(*mode, sources)
 
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 
 	err = pb.Save(*filename)
 
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 
-	os.Exit(0)
+	return nil
 }
