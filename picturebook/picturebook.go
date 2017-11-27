@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/jung-kurt/gofpdf"
+	"github.com/straup/go-image-tools/util"	
 	"github.com/whosonfirst/go-whosonfirst-index"
 	"io"
 	"log"
@@ -218,6 +219,12 @@ func (pb *PictureBook) AddPicture(pagenum int, abs_path string, caption string) 
 	pb.Mutex.Lock()
 	defer pb.Mutex.Unlock()
 
+        _, _, err := util.DecodeImage(abs_path)
+
+        if err != nil {
+		return err
+	}
+	
 	info := pb.PDF.GetImageInfo(abs_path)
 
 	if info == nil {
