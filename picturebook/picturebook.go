@@ -153,7 +153,7 @@ func NewPictureBook(opts PictureBookOptions) (*PictureBook, error) {
 	return &pb, nil
 }
 
-func (pb *PictureBook) AddPictures(mode string, paths []string) error {
+func (pb *PictureBook) AddPictures(paths []string) error {
 
 	cb := func(path string, info os.FileInfo, err error) error {
 

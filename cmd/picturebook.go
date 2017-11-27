@@ -29,7 +29,6 @@ func Picturebook() error {
 	var caption = flag.String("caption", "default", "...")
 	var filename = flag.String("filename", "picturebook.pdf", "...")
 	var debug = flag.Bool("debug", false, "...")
-	var mode = flag.String("mode", "files", "...")
 
 	var include picturebook.RegexpFlag
 	var exclude picturebook.RegexpFlag
@@ -138,7 +137,7 @@ func Picturebook() error {
 
 	sources := flag.Args()
 
-	err = pb.AddPictures(*mode, sources)
+	err = pb.AddPictures(sources)
 
 	if err != nil {
 		return err
