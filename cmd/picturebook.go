@@ -26,6 +26,7 @@ func Picturebook() error {
 	var width = flag.Float64("width", 8.5, "...")
 	var height = flag.Float64("height", 11, "...")
 	var dpi = flag.Float64("dpi", 150, "...")
+	var border = flag.Float64("border", 0.01, "...")
 	var caption = flag.String("caption", "default", "...")
 	var filename = flag.String("filename", "picturebook.pdf", "...")
 	var debug = flag.Bool("debug", false, "...")
@@ -46,6 +47,7 @@ func Picturebook() error {
 	opts.Width = *width
 	opts.Height = *height
 	opts.DPI = *dpi
+	opts.Border = *border
 	opts.Debug = *debug
 
 	processed := make([]string, 0)

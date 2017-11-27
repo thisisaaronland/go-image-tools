@@ -17,6 +17,7 @@ type PictureBookOptions struct {
 	Width       float64
 	Height      float64
 	DPI         float64
+	Border      float64
 	Filter      PictureBookFilterFunc
 	PreProcess  PictureBookPreProcessFunc
 	Caption     PictureBookCaptionFunc
@@ -65,6 +66,7 @@ func NewPictureBookDefaultOptions() PictureBookOptions {
 		Width:       0.0,
 		Height:      0.0,
 		DPI:         150.0,
+		Border:      0.01,
 		Filter:      filter,
 		PreProcess:  prep,
 		Caption:     capt,
@@ -356,9 +358,12 @@ func (pb *PictureBook) AddPicture(pagenum int, abs_path string, caption string) 
 	w = w / pb.Options.DPI
 	h = h / pb.Options.DPI
 
-	r_border := 0.01
+	r_border := pb.Options.Border
 
-	pb.PDF.Rect((x - r_border), (y - r_border), (w + (r_border * 2)), (h + (r_border * 2)), "D")
+	if r_border > 0.0 {
+		pb.PDF.SetFillColor(0, 0, 0)
+		pb.PDF.Rect((x - r_border), (y - r_border), (w + (r_border * 2)), (h + (r_border * 2)), "FD")
+	}
 
 	pb.PDF.ImageOptions(abs_path, x, y, w, h, false, opts, 0, "")
 
@@ -384,6 +389,7 @@ func (pb *PictureBook) AddPicture(pagenum int, abs_path string, caption string) 
 			log.Printf("[%d] text at %0.2f x %0.2f (%0.2f x %0.2f)\n", pagenum, txt_x, txt_y, txt_w, txt_h)
 		}
 
+		// pb.PDF.SetFillColor(255, 255, 255)
 		// pb.PDF.Rect(txt_x, txt_y, txt_w, txt_h, "FD")
 
 		pb.PDF.SetXY(txt_x, txt_y)
