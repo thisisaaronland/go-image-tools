@@ -1,5 +1,7 @@
 package halftone
 
+// https://maxhalford.github.io/blog/halftoning-1/
+
 import (
 	"errors"
 	"github.com/MaxHalford/halfgone"
