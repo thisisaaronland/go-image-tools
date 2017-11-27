@@ -219,16 +219,24 @@ func (pb *PictureBook) AddPicture(pagenum int, abs_path string, caption string) 
 	pb.Mutex.Lock()
 	defer pb.Mutex.Unlock()
 
-        _, _, err := util.DecodeImage(abs_path)
+        im, format, err := util.DecodeImage(abs_path)
 
         if err != nil {
 		return err
 	}
+
+	dims := im.Bounds()
 	
 	info := pb.PDF.GetImageInfo(abs_path)
 
 	if info == nil {
-		info = pb.PDF.RegisterImage(abs_path, "")
+
+	opts := gofpdf.ImageOptions{
+		ReadDpi:   false,
+		ImageType: format,
+	}
+
+		info = pb.PDF.RegisterImageOptions(abs_path, opts)
 	}
 
 	if info == nil {
@@ -237,8 +245,8 @@ func (pb *PictureBook) AddPicture(pagenum int, abs_path string, caption string) 
 
 	info.SetDpi(pb.Options.DPI)
 
-	w := info.Width() * pb.Options.DPI
-	h := info.Height() * pb.Options.DPI
+	w := float64(dims.Max.X) * pb.Options.DPI
+	h := float64(dims.Max.Y) * pb.Options.DPI
 
 	if pb.Options.Debug {
 		log.Printf("[%d] %s %02.f x %02.f\n", pagenum, abs_path, w, h)
@@ -327,7 +335,7 @@ func (pb *PictureBook) AddPicture(pagenum int, abs_path string, caption string) 
 
 	opts := gofpdf.ImageOptions{
 		ReadDpi:   false,
-		ImageType: "",
+		ImageType: format,
 	}
 
 	x = x / pb.Options.DPI
