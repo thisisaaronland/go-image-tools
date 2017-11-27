@@ -24,9 +24,26 @@ func DefaultPreProcessFunc(path string) (string, error) {
 }
 
 func DefaultCaptionFunc(path string) (string, error) {
+	return FilenameCaptionFunc(path)
+}
+
+func FilenameCaptionFunc(path string) (string, error) {
 
 	fname := filepath.Base(path)
 	return fname, nil
+}
+
+func FilenameAndParentCaptionFunc(path string) (string, error) {
+
+	root := filepath.Dir(path)
+	parent := filepath.Base(root)
+	fname := filepath.Base(path)
+
+	return filepath.Join(parent, fname), nil
+}
+
+func NoneCaptionFunc(path string) (string, error) {
+	return "", nil
 }
 
 func HalftonePreProcessFunc(path string) (string, error) {

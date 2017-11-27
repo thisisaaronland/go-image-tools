@@ -1,14 +1,13 @@
 package picturebook
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"github.com/jung-kurt/gofpdf"
-	"github.com/straup/go-image-tools/util"	
-	"github.com/whosonfirst/go-whosonfirst-index"
-	"io"
+	"github.com/straup/go-image-tools/util"
 	"log"
+	"os"
+	"path/filepath"
 	"sync"
 )
 
@@ -156,9 +155,17 @@ func NewPictureBook(opts PictureBookOptions) (*PictureBook, error) {
 
 func (pb *PictureBook) AddPictures(mode string, paths []string) error {
 
-	cb := func(fh io.Reader, ctx context.Context, args ...interface{}) error {
+	cb := func(path string, info os.FileInfo, err error) error {
 
-		abs_path, err := index.PathForContext(ctx)
+		if err != nil {
+			return err
+		}
+
+		if info.IsDir() {
+			return nil
+		}
+
+		abs_path, err := filepath.Abs(path)
 
 		if err != nil {
 			// log.Println("PATH", abs_path, err)
@@ -179,14 +186,14 @@ func (pb *PictureBook) AddPictures(mode string, paths []string) error {
 		processed_path, err := pb.Options.PreProcess(abs_path)
 
 		if err != nil {
-			log.Println("PROCESS", abs_path, err)
+			// log.Println("PROCESS", abs_path, err)
 			return nil
 		}
 
 		caption, err := pb.Options.Caption(abs_path)
 
 		if err != nil {
-			log.Println("CAPTION", abs_path, err)
+			// log.Println("CAPTION", abs_path, err)
 			return nil
 		}
 
@@ -198,20 +205,23 @@ func (pb *PictureBook) AddPictures(mode string, paths []string) error {
 		err = pb.AddPicture(pagenum, processed_path, caption)
 
 		if err != nil {
-			log.Println("ADD", abs_path, err)
+			// log.Println("ADD", abs_path, err)
 			return nil
 		}
 
 		return nil
 	}
 
-	idx, err := index.NewIndexer(mode, cb)
+	for _, path := range paths {
 
-	if err != nil {
-		return err
+		err := filepath.Walk(path, cb)
+
+		if err != nil {
+			return err
+		}
 	}
 
-	return idx.IndexPaths(paths)
+	return nil
 }
 
 func (pb *PictureBook) AddPicture(pagenum int, abs_path string, caption string) error {
@@ -219,22 +229,22 @@ func (pb *PictureBook) AddPicture(pagenum int, abs_path string, caption string) 
 	pb.Mutex.Lock()
 	defer pb.Mutex.Unlock()
 
-        im, format, err := util.DecodeImage(abs_path)
+	im, format, err := util.DecodeImage(abs_path)
 
-        if err != nil {
+	if err != nil {
 		return err
 	}
 
 	dims := im.Bounds()
-	
+
 	info := pb.PDF.GetImageInfo(abs_path)
 
 	if info == nil {
 
-	opts := gofpdf.ImageOptions{
-		ReadDpi:   false,
-		ImageType: format,
-	}
+		opts := gofpdf.ImageOptions{
+			ReadDpi:   false,
+			ImageType: format,
+		}
 
 		info = pb.PDF.RegisterImageOptions(abs_path, opts)
 	}
@@ -244,6 +254,9 @@ func (pb *PictureBook) AddPicture(pagenum int, abs_path string, caption string) 
 	}
 
 	info.SetDpi(pb.Options.DPI)
+
+	// w := info.Width() * pb.Options.DPI
+	// h := info.Height() * pb.Options.DPI
 
 	w := float64(dims.Max.X) * pb.Options.DPI
 	h := float64(dims.Max.Y) * pb.Options.DPI
@@ -349,8 +362,8 @@ func (pb *PictureBook) AddPicture(pagenum int, abs_path string, caption string) 
 
 	pb.PDF.ImageOptions(abs_path, x, y, w, h, false, opts, 0, "")
 
-	//
-
+	if caption != "" {
+	
 	cur_x, cur_y := pb.PDF.GetXY()
 
 	txt := caption
@@ -375,15 +388,16 @@ func (pb *PictureBook) AddPicture(pagenum int, abs_path string, caption string) 
 
 	pb.PDF.SetXY(txt_x, txt_y)
 	pb.PDF.Cell(txt_w, txt_h, txt)
-
+	}
+	
 	return nil
 }
 
 func (pb *PictureBook) Save(path string) error {
-     
+
 	if pb.Options.Debug {
-	     log.Printf("save %s\n", path)
-        }
+		log.Printf("save %s\n", path)
+	}
 
 	return pb.PDF.OutputFileAndClose(path)
 }
