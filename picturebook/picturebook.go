@@ -3,7 +3,7 @@ package picturebook
 import (
 	"context"
 	"errors"
-	_ "fmt"
+	"fmt"
 	"github.com/jung-kurt/gofpdf"
 	"github.com/whosonfirst/go-whosonfirst-index"
 	"io"
@@ -160,13 +160,15 @@ func (pb *PictureBook) AddPictures(mode string, paths []string) error {
 		abs_path, err := index.PathForContext(ctx)
 
 		if err != nil {
-			return err
+			// log.Println("PATH", abs_path, err)
+			return nil
 		}
 
 		ok, err := pb.Options.Filter(abs_path)
 
 		if err != nil {
-			return err
+			// log.Println("FILTER", abs_path, err)
+			return nil
 		}
 
 		if !ok {
@@ -176,12 +178,14 @@ func (pb *PictureBook) AddPictures(mode string, paths []string) error {
 		processed_path, err := pb.Options.PreProcess(abs_path)
 
 		if err != nil {
+			log.Println("PROCESS", abs_path, err)
 			return nil
 		}
 
 		caption, err := pb.Options.Caption(abs_path)
 
 		if err != nil {
+			log.Println("CAPTION", abs_path, err)
 			return nil
 		}
 
@@ -193,7 +197,8 @@ func (pb *PictureBook) AddPictures(mode string, paths []string) error {
 		err = pb.AddPicture(pagenum, processed_path, caption)
 
 		if err != nil {
-			return err
+			log.Println("ADD", abs_path, err)
+			return nil
 		}
 
 		return nil
@@ -230,6 +235,11 @@ func (pb *PictureBook) AddPicture(pagenum int, abs_path string, caption string) 
 
 	if pb.Options.Debug {
 		log.Printf("[%d] %s %02.f x %02.f\n", pagenum, abs_path, w, h)
+	}
+
+	if w == 0.0 || h == 0.0 {
+		msg := fmt.Sprintf("[%d] %s has zero-sized dimension", pagenum, abs_path)
+		return errors.New(msg)
 	}
 
 	x := pb.Border.Left
@@ -355,6 +365,10 @@ func (pb *PictureBook) AddPicture(pagenum int, abs_path string, caption string) 
 }
 
 func (pb *PictureBook) Save(path string) error {
+     
+	if pb.Options.Debug {
+	     log.Printf("save %s\n", path)
+        }
 
 	return pb.PDF.OutputFileAndClose(path)
 }
