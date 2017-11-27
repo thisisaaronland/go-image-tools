@@ -26,6 +26,7 @@ func Picturebook() error {
 	var width = flag.Float64("width", 8.5, "...")
 	var height = flag.Float64("height", 11, "...")
 	var dpi = flag.Float64("dpi", 150, "...")
+	var caption = flag.String("caption", "default", "...")
 	var filename = flag.String("filename", "picturebook.pdf", "...")
 	var debug = flag.Bool("debug", false, "...")
 	var mode = flag.String("mode", "files", "...")
@@ -111,8 +112,23 @@ func Picturebook() error {
 		return final, nil
 	}
 
+	var capt picturebook.PictureBookCaptionFunc
+
+	switch *caption {
+
+	case "filename":
+		capt = picturebook.FilenameCaptionFunc
+	case "parent":
+		capt = picturebook.FilenameAndParentCaptionFunc
+	case "none":
+		capt = picturebook.NoneCaptionFunc
+	default:
+		capt = picturebook.DefaultCaptionFunc
+	}
+
 	opts.Filter = filter
 	opts.PreProcess = prep
+	opts.Caption = capt
 
 	pb, err := picturebook.NewPictureBook(opts)
 
