@@ -1,13 +1,16 @@
 package picturebook
 
 import (
-	"context"
+	_ "context"
 	"errors"
 	"fmt"
 	"github.com/jung-kurt/gofpdf"
-	"github.com/whosonfirst/go-whosonfirst-index"
-	"io"
+	"github.com/straup/go-image-tools/util"	
+	_ "github.com/whosonfirst/go-whosonfirst-index"
+	_ "io"
 	"log"
+	"os"
+	"path/filepath"
 	"sync"
 )
 
@@ -155,10 +158,22 @@ func NewPictureBook(opts PictureBookOptions) (*PictureBook, error) {
 
 func (pb *PictureBook) AddPictures(mode string, paths []string) error {
 
-	cb := func(fh io.Reader, ctx context.Context, args ...interface{}) error {
+	// cb := func(fh io.Reader, ctx context.Context, args ...interface{}) error {
 
-		abs_path, err := index.PathForContext(ctx)
+	cb := func(path string, info os.FileInfo, err error) error {
 
+		if err != nil {
+			return err
+		}
+
+		if info.IsDir() {
+			return nil
+		}
+
+		// abs_path, err := index.PathForContext(ctx)
+
+		abs_path, err := filepath.Abs(path)
+		
 		if err != nil {
 			// log.Println("PATH", abs_path, err)
 			return nil
@@ -204,6 +219,16 @@ func (pb *PictureBook) AddPictures(mode string, paths []string) error {
 		return nil
 	}
 
+	for _, path := range paths {
+
+		err := filepath.Walk(path, cb)
+
+		if err != nil {
+		   return err
+		}
+	}
+
+	/*
 	idx, err := index.NewIndexer(mode, cb)
 
 	if err != nil {
@@ -211,6 +236,9 @@ func (pb *PictureBook) AddPictures(mode string, paths []string) error {
 	}
 
 	return idx.IndexPaths(paths)
+	*/
+
+	return nil
 }
 
 func (pb *PictureBook) AddPicture(pagenum int, abs_path string, caption string) error {
@@ -218,8 +246,16 @@ func (pb *PictureBook) AddPicture(pagenum int, abs_path string, caption string) 
 	pb.Mutex.Lock()
 	defer pb.Mutex.Unlock()
 
+	_, _, err := util.DecodeImage(abs_path)
+
+	if err != nil {
+		return err
+	}
+	
 	info := pb.PDF.GetImageInfo(abs_path)
 
+	log.Println("INFO", abs_path, info)
+	
 	if info == nil {
 		info = pb.PDF.RegisterImage(abs_path, "")
 	}
