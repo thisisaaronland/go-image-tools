@@ -4,36 +4,12 @@ import (
 	"flag"
 	"fmt"
 	"github.com/iand/salience"
-	"image"
-	"image/jpeg"
+	"github.com/straup/go-image-tools/util"
 	"log"
 	"os"
 	"path/filepath"
 	"strings"
 )
-
-func LoadImage(filepath string) (image.Image, error) {
-	infile, err := os.Open(filepath)
-	if err != nil {
-		return nil, err
-	}
-	defer infile.Close()
-	img, _, err := image.Decode(infile)
-	if err != nil {
-		return nil, err
-	}
-	return img, nil
-}
-
-func SaveImage(img image.Image, path string) error {
-	f, err := os.Create(path)
-	if err != nil {
-		return err
-	}
-	defer f.Close()
-	jpeg.Encode(f, img, nil)
-	return nil
-}
 
 func main() {
 
@@ -50,9 +26,7 @@ func main() {
 			log.Fatal(err)
 		}
 
-		// only does PNG files...
-		// im, err := halfgone.LoadImage(abs_path)
-		im, err := LoadImage(abs_path)
+		im, format, err := util.DecodeImage(abs_path)
 
 		if err != nil {
 			log.Fatal(err)
@@ -68,7 +42,16 @@ func main() {
 		fname = strings.Replace(fname, ext, new_ext, -1)
 
 		new_path := filepath.Join(root, fname)
-		err = SaveImage(cropped, new_path)
+
+		fh, err := os.Create(new_path)
+
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		defer fh.Close()
+
+		err = util.EncodeImage(cropped, format, fh)
 
 		if err != nil {
 			log.Fatal(err)

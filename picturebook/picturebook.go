@@ -363,33 +363,33 @@ func (pb *PictureBook) AddPicture(pagenum int, abs_path string, caption string) 
 	pb.PDF.ImageOptions(abs_path, x, y, w, h, false, opts, 0, "")
 
 	if caption != "" {
-	
-	cur_x, cur_y := pb.PDF.GetXY()
 
-	txt := caption
+		cur_x, cur_y := pb.PDF.GetXY()
 
-	txt_w := pb.PDF.GetStringWidth(txt)
-	txt_h := line_h
+		txt := caption
 
-	txt_w = txt_w + +(pb.Text.Margin * 2)
-	txt_h = txt_h + +(pb.Text.Margin * 2)
+		txt_w := pb.PDF.GetStringWidth(txt)
+		txt_h := line_h
 
-	cur_x = (x - r_border)
-	cur_y = (y - r_border) + (h + (r_border * 2))
+		txt_w = txt_w + +(pb.Text.Margin * 2)
+		txt_h = txt_h + +(pb.Text.Margin * 2)
 
-	txt_x := cur_x
-	txt_y := cur_y
+		cur_x = (x - r_border)
+		cur_y = (y - r_border) + (h + (r_border * 2))
 
-	if pb.Options.Debug {
-		log.Printf("[%d] text at %0.2f x %0.2f (%0.2f x %0.2f)\n", pagenum, txt_x, txt_y, txt_w, txt_h)
+		txt_x := cur_x
+		txt_y := cur_y
+
+		if pb.Options.Debug {
+			log.Printf("[%d] text at %0.2f x %0.2f (%0.2f x %0.2f)\n", pagenum, txt_x, txt_y, txt_w, txt_h)
+		}
+
+		// pb.PDF.Rect(txt_x, txt_y, txt_w, txt_h, "FD")
+
+		pb.PDF.SetXY(txt_x, txt_y)
+		pb.PDF.Cell(txt_w, txt_h, txt)
 	}
 
-	// pb.PDF.Rect(txt_x, txt_y, txt_w, txt_h, "FD")
-
-	pb.PDF.SetXY(txt_x, txt_y)
-	pb.PDF.Cell(txt_w, txt_h, txt)
-	}
-	
 	return nil
 }
 
