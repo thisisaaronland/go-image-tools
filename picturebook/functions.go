@@ -1,9 +1,12 @@
 package picturebook
 
 import (
+	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/straup/go-image-tools/halftone"
 	"github.com/straup/go-image-tools/util"
+	"github.com/tidwall/gjson"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -21,6 +24,29 @@ func DefaultFilterFunc(string) (bool, error) {
 
 func DefaultPreProcessFunc(path string) (string, error) {
 	return path, nil
+}
+
+func PictureBookCaptionFuncFromString(caption string) (PictureBookCaptionFunc, error) {
+
+	var capt PictureBookCaptionFunc
+
+	switch caption {
+
+	case "cooperhewitt":
+		capt = CooperHewittShoeboxCaptionFunc
+	case "default":
+		capt = FilenameCaptionFunc
+	case "filename":
+		capt = FilenameCaptionFunc
+	case "parent":
+		capt = FilenameAndParentCaptionFunc
+	case "none":
+		capt = NoneCaptionFunc
+	default:
+		return nil, errors.New("Invalid caption type")
+	}
+
+	return capt, nil
 }
 
 func DefaultCaptionFunc(path string) (string, error) {
@@ -44,6 +70,43 @@ func FilenameAndParentCaptionFunc(path string) (string, error) {
 
 func NoneCaptionFunc(path string) (string, error) {
 	return "", nil
+}
+
+func CooperHewittShoeboxCaptionFunc(path string) (string, error) {
+
+	root := filepath.Dir(path)
+	info := filepath.Join(root, "index.json")
+
+	_, err := os.Stat(info)
+
+	if err != nil {
+		return "", err
+	}
+
+	fh, err := os.Open(info)
+
+	if err != nil {
+		return "", err
+	}
+
+	defer fh.Close()
+
+	body, err := ioutil.ReadAll(fh)
+
+	var item interface{}
+	err = json.Unmarshal(body, &item)
+
+	if err != nil {
+		return "", err
+	}
+
+	rsp := gjson.GetBytes(body, "refers_to.title")
+
+	if !rsp.Exists() {
+		return "", errors.New("Object information missing title")
+	}
+
+	return rsp.String(), nil
 }
 
 func HalftonePreProcessFunc(path string) (string, error) {

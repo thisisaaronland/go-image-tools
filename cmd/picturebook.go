@@ -113,18 +113,10 @@ func Picturebook() error {
 		return final, nil
 	}
 
-	var capt picturebook.PictureBookCaptionFunc
+	capt, err := picturebook.PictureBookCaptionFuncFromString(*caption)
 
-	switch *caption {
-
-	case "filename":
-		capt = picturebook.FilenameCaptionFunc
-	case "parent":
-		capt = picturebook.FilenameAndParentCaptionFunc
-	case "none":
-		capt = picturebook.NoneCaptionFunc
-	default:
-		capt = picturebook.DefaultCaptionFunc
+	if err != nil {
+		log.Fatal(err)
 	}
 
 	opts.Filter = filter
