@@ -383,8 +383,11 @@ func (pb *PictureBook) AddPicture(pagenum int, abs_path string, caption string) 
 		cur_x = (x - r_border)
 		cur_y = (y - r_border) + (h + (r_border * 2))
 
+		_, line_h := pb.PDF.GetFontSize()
+		// line_h = line_h + (r_border * 2)
+
 		txt_x := cur_x
-		txt_y := cur_y
+		txt_y := cur_y + line_h
 
 		if pb.Options.Debug {
 			log.Printf("[%d] text at %0.2f x %0.2f (%0.2f x %0.2f)\n", pagenum, txt_x, txt_y, txt_w, txt_h)
@@ -394,11 +397,12 @@ func (pb *PictureBook) AddPicture(pagenum int, abs_path string, caption string) 
 		// pb.PDF.Rect(txt_x, txt_y, txt_w, txt_h, "FD")
 
 		pb.PDF.SetXY(txt_x, txt_y)
-		pb.PDF.Cell(txt_w, txt_h, txt)
+		// pb.PDF.Cell(txt_w, txt_h, txt)
 
-		// _, line_h := pb.PDF.GetFontSize()
-		// html := pb.PDF.HTMLBasicNew()
-		// html.Write(line_h, txt)	
+		pb.PDF.SetLeftMargin(x)
+		pb.PDF.SetRightMargin(pb.Border.Right / pb.Options.DPI)
+		html := pb.PDF.HTMLBasicNew()
+		html.Write(line_h, txt)
 	}
 
 	return nil
