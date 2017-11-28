@@ -383,8 +383,12 @@ func (pb *PictureBook) AddPicture(pagenum int, abs_path string, caption string) 
 		cur_x = (x - r_border)
 		cur_y = (y - r_border) + (h + (r_border * 2))
 
+		font_sz, _ := pb.PDF.GetFontSize()
+		pb.PDF.SetFontSize(font_sz + 2)
+
 		_, line_h := pb.PDF.GetFontSize()
-		// line_h = line_h + (r_border * 2)
+
+		pb.PDF.SetFontSize(font_sz)
 
 		txt_x := cur_x
 		txt_y := cur_y + line_h
