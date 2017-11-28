@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/jung-kurt/gofpdf"
+	"github.com/straup/go-image-tools/picturebook/functions"
 	"github.com/straup/go-image-tools/util"
 	"log"
 	"os"
@@ -18,9 +19,9 @@ type PictureBookOptions struct {
 	Height      float64
 	DPI         float64
 	Border      float64
-	Filter      PictureBookFilterFunc
-	PreProcess  PictureBookPreProcessFunc
-	Caption     PictureBookCaptionFunc
+	Filter      functions.PictureBookFilterFunc
+	PreProcess  functions.PictureBookPreProcessFunc
+	Caption     functions.PictureBookCaptionFunc
 	Debug       bool
 }
 
@@ -56,9 +57,9 @@ type PictureBook struct {
 
 func NewPictureBookDefaultOptions() PictureBookOptions {
 
-	filter := DefaultFilterFunc
-	prep := DefaultPreProcessFunc
-	capt := DefaultCaptionFunc
+	filter := functions.DefaultFilterFunc
+	prep := functions.DefaultPreProcessFunc
+	capt := functions.DefaultCaptionFunc
 
 	opts := PictureBookOptions{
 		Orientation: "P",

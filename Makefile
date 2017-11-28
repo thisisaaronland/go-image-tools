@@ -34,6 +34,7 @@ fmt:
 	go fmt cmd/*.go
 	go fmt halftone/*.go
 	go fmt picturebook/*.go
+	go fmt picturebook/*/*.go
 	go fmt util/*.go
 
 bin: 	self

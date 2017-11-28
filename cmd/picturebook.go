@@ -4,6 +4,7 @@ import (
 	"errors"
 	"flag"
 	"github.com/straup/go-image-tools/picturebook"
+	"github.com/straup/go-image-tools/picturebook/functions"
 	"log"
 	"os"
 )
@@ -96,7 +97,7 @@ func Picturebook() error {
 			switch proc {
 			case "halftone":
 
-				processed_path, err := picturebook.HalftonePreProcessFunc(final)
+				processed_path, err := functions.HalftonePreProcessFunc(final)
 
 				if err != nil {
 					return "", err
@@ -113,7 +114,7 @@ func Picturebook() error {
 		return final, nil
 	}
 
-	capt, err := picturebook.PictureBookCaptionFuncFromString(*caption)
+	capt, err := functions.PictureBookCaptionFuncFromString(*caption)
 
 	if err != nil {
 		log.Fatal(err)

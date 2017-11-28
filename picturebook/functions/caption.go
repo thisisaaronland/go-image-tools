@@ -1,30 +1,14 @@
-package picturebook
+package functions
 
 import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/straup/go-image-tools/halftone"
-	"github.com/straup/go-image-tools/util"
 	"github.com/tidwall/gjson"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 )
-
-type PictureBookFilterFunc func(string) (bool, error)
-
-type PictureBookPreProcessFunc func(string) (string, error)
-
-type PictureBookCaptionFunc func(string) (string, error)
-
-func DefaultFilterFunc(string) (bool, error) {
-	return true, nil
-}
-
-func DefaultPreProcessFunc(path string) (string, error) {
-	return path, nil
-}
 
 func PictureBookCaptionFuncFromString(caption string) (PictureBookCaptionFunc, error) {
 
@@ -100,59 +84,25 @@ func CooperHewittShoeboxCaptionFunc(path string) (string, error) {
 		return "", err
 	}
 
-	rsp := gjson.GetBytes(body, "refers_to.title")
+	var rsp gjson.Result
+	var title string
+	var added int64
+	
+	rsp = gjson.GetBytes(body, "refers_to.title")
 
 	if !rsp.Exists() {
 		return "", errors.New("Object information missing title")
 	}
 
-	return rsp.String(), nil
-}
+	title = rsp.String()
 
-func HalftonePreProcessFunc(path string) (string, error) {
+	rsp = gjson.GetBytes(body, "created")
 
-	im, format, err := util.DecodeImage(path)
-
-	if err != nil {
-		return "", err
+	if rsp.Exists() {
+	   added = rsp.Int()
 	}
 
-	opts := halftone.NewDefaultHalftoneOptions()
-	dithered, err := halftone.Halftone(im, opts)
-
-	if err != nil {
-		return "", err
-	}
-
-	fh, err := ioutil.TempFile("", "halftone")
-
-	if err != nil {
-		return "", err
-	}
-
-	defer fh.Close()
-
-	err = util.EncodeImage(dithered, format, fh)
-
-	if err != nil {
-		return "", err
-	}
-
-	// see what's going on here - this (appending the format
-	// extension) is necessary because without it fpdf.GetImageInfo
-	// gets confused and FREAKS out triggering fatal errors
-	// along the way... oh well (20171125/thisisaaronland)
-
-	fname := fh.Name()
-	fh.Close()
-
-	fq_fname := fmt.Sprintf("%s.%s", fname, format)
-
-	err = os.Rename(fname, fq_fname)
-
-	if err != nil {
-		return "", err
-	}
-
-	return fq_fname, nil
+	caption := fmt.Sprintf("%s (added %d)", title, added)
+	
+	return caption, nil
 }
