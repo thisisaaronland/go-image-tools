@@ -102,7 +102,7 @@ func CooperHewittShoeboxCaptionFunc(path string) (string, error) {
 	   added = rsp.Int()
 	}
 
-	caption := fmt.Sprintf("%s (added %d)", title, added)
+	caption := fmt.Sprintf("%s<br />(added %d)", title, added)
 	
 	return caption, nil
 }

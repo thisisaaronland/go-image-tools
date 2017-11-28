@@ -395,6 +395,10 @@ func (pb *PictureBook) AddPicture(pagenum int, abs_path string, caption string) 
 
 		pb.PDF.SetXY(txt_x, txt_y)
 		pb.PDF.Cell(txt_w, txt_h, txt)
+
+		// _, line_h := pb.PDF.GetFontSize()
+		// html := pb.PDF.HTMLBasicNew()
+		// html.Write(line_h, txt)	
 	}
 
 	return nil
