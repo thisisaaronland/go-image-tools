@@ -368,6 +368,9 @@ func (pb *PictureBook) AddPicture(pagenum int, abs_path string, caption string) 
 
 	pb.PDF.ImageOptions(abs_path, x, y, w, h, false, opts, 0, "")
 
+	// please account for lack of utf-8 support (20171128/thisisaaronland)
+	// https://github.com/jung-kurt/gofpdf/blob/cc7f4a2880e224dc55d15289863817df6d9f6893/fpdf_test.go#L1440-L1478
+	
 	if caption != "" {
 
 		cur_x, cur_y := pb.PDF.GetXY()
@@ -383,6 +386,9 @@ func (pb *PictureBook) AddPicture(pagenum int, abs_path string, caption string) 
 		cur_x = (x - r_border)
 		cur_y = (y - r_border) + (h + (r_border * 2))
 
+		// please do this in the constructor...
+		// (20171128/thisisaaronland)
+		
 		font_sz, _ := pb.PDF.GetFontSize()
 		pb.PDF.SetFontSize(font_sz + 2)
 
