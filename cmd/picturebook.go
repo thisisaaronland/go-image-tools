@@ -30,6 +30,7 @@ func Picturebook() error {
 	var border = flag.Float64("border", 0.01, "...")
 	var caption = flag.String("caption", "default", "...")
 	var filename = flag.String("filename", "picturebook.pdf", "...")
+	var target = flag.String("target", "", "...")
 	var debug = flag.Bool("debug", false, "...")
 
 	var include picturebook.RegexpFlag
@@ -41,6 +42,17 @@ func Picturebook() error {
 	flag.Var(&preprocess, "pre-process", "...")
 
 	flag.Parse()
+
+	switch *target {
+		case "":
+			// pass
+		case "cooperhewitt":
+			*caption = *target
+		case "flickr":
+			*caption = *target
+		default:
+			log.Fatal("Unknown or invalid target")
+	}
 
 	opts := picturebook.NewPictureBookDefaultOptions()
 	opts.Orientation = *orientation
@@ -64,7 +76,8 @@ func Picturebook() error {
 					return
 				}
 
-				os.Remove(p)
+				log.Println("WOULD REMOVE", p)
+				// os.Remove(p)
 			}(p)
 		}
 	}()
@@ -95,12 +108,32 @@ func Picturebook() error {
 		for _, proc := range preprocess {
 
 			switch proc {
+
+			case "rotate":
+
+				processed_path, err := functions.RotatePreProcessFunc(final)
+
+				if err != nil {
+					return "", err
+				}
+
+				if processed_path == "" {
+					continue
+				}
+
+				processed = append(processed, processed_path)
+				final = processed_path
+
 			case "halftone":
 
 				processed_path, err := functions.HalftonePreProcessFunc(final)
 
 				if err != nil {
 					return "", err
+				}
+
+				if processed_path == "" {
+					continue
 				}
 
 				processed = append(processed, processed_path)
