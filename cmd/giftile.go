@@ -1,11 +1,13 @@
 package main
 
 import (
+	"bytes"
 	"flag"
-	"github.com/nfnt/resize"	
+	"github.com/nfnt/resize"
 	"github.com/straup/go-image-tools/util"
 	"image"
 	"image/draw"
+	"image/png"
 	"log"
 	"math"
 	"os"
@@ -54,9 +56,24 @@ func main() {
 
 		for _, im := range g.Image {
 
-			i := im.SubImage(im.Bounds())
+			buf := bytes.Buffer{}
+
+			// i := im.SubImage(im.Bounds())
+
+			err := png.Encode(&buf, im)
+
+			if err != nil {
+				log.Fatal(err)
+			}
+
+			i, err := png.Decode(&buf)
+
+			if err != nil {
+				log.Fatal(err)
+			}
+
 			i = resize.Thumbnail(uint(w), uint(h), i, resize.Lanczos3)
-			
+
 			images = append(images, i)
 		}
 
