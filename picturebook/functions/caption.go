@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 )
 
@@ -26,6 +27,8 @@ func PictureBookCaptionFuncFromString(caption string) (PictureBookCaptionFunc, e
 		capt = FilenameCaptionFunc
 	case "filename":
 		capt = FilenameCaptionFunc
+	case "flickr":
+		capt = FlickrArchiveCaptionFunc
 	case "parent":
 		capt = FilenameAndParentCaptionFunc
 	case "none":
@@ -58,6 +61,82 @@ func FilenameAndParentCaptionFunc(path string) (string, error) {
 
 func NoneCaptionFunc(path string) (string, error) {
 	return "", nil
+}
+
+func FlickrArchiveCaptionFunc(path string) (string, error) {
+
+     ext := filepath.Ext(path)
+
+     img_ext := fmt.Sprintf("_o%s", ext)
+     info_ext := "_i.json"
+
+     info := strings.Replace(path, img_ext, info_ext, -1)
+
+	_, err := os.Stat(info)
+
+	if err != nil {
+		return "", err
+	}
+
+	fh, err := os.Open(info)
+
+	if err != nil {
+		return "", err
+	}
+
+	defer fh.Close()
+
+	body, err := ioutil.ReadAll(fh)
+
+	var item interface{}
+	err = json.Unmarshal(body, &item)
+
+	if err != nil {
+		return "", err
+	}
+
+	var rsp gjson.Result
+	var photo_id int64
+	var title string
+	var taken string
+
+	rsp = gjson.GetBytes(body, "photo.id")
+
+	if !rsp.Exists(){
+		return "", errors.New("Missing photo ID")
+	}
+
+	photo_id = rsp.Int()
+
+	rsp = gjson.GetBytes(body, "photo.title._content")
+
+	if !rsp.Exists(){
+		return "", errors.New("Missing title")
+	}
+
+	title = rsp.String()
+
+	rsp = gjson.GetBytes(body, "photo.dates.taken")
+
+	if !rsp.Exists(){
+		return "", errors.New("Missing date")
+	}
+
+	taken = rsp.String()
+
+	// go... Y U SO WEIRD...
+	// https://golang.org/src/time/format.go
+
+	tm, err := time.Parse("2006-01-02 15:04:05", taken)
+
+	if err != nil {
+		return "", nil
+	}
+
+	dt := tm.Format("Jan 02, 2006")
+
+	caption := fmt.Sprintf("<b>%s</b><br />%s / %d", title, dt, photo_id)
+	return caption, nil
 }
 
 func CooperHewittShoeboxCaptionFunc(path string) (string, error) {
