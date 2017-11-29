@@ -5,6 +5,7 @@ import (
 	"github.com/rwcarlsen/goexif/exif"
 	"github.com/straup/go-image-tools/halftone"
 	"github.com/straup/go-image-tools/util"
+	_ "log"
 	"os"
 	"path/filepath"
 )
@@ -43,6 +44,8 @@ func RotatePreProcessFunc(path string) (string, error) {
 		return "", nil
 	}
 
+	// log.Println(path, tag)
+
 	orientation, err := tag.Int64(0)
 
 	if err != nil {
@@ -50,7 +53,7 @@ func RotatePreProcessFunc(path string) (string, error) {
 	}
 
 	if orientation == 1 {
-		return path, nil
+		return "", nil
 	}
 
 	im, format, err := util.DecodeImage(path)

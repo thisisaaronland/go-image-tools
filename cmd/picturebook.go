@@ -64,7 +64,8 @@ func Picturebook() error {
 					return
 				}
 
-				os.Remove(p)
+				log.Println("WOULD REMOVE", p)
+				// os.Remove(p)
 			}(p)
 		}
 	}()
