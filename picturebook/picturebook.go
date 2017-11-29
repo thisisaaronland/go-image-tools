@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/jung-kurt/gofpdf"
+	"github.com/rainycape/unidecode"
 	"github.com/straup/go-image-tools/picturebook/functions"
 	"github.com/straup/go-image-tools/util"
 	"log"
@@ -367,9 +368,6 @@ func (pb *PictureBook) AddPicture(pagenum int, abs_path string, caption string) 
 	}
 
 	pb.PDF.ImageOptions(abs_path, x, y, w, h, false, opts, 0, "")
-
-	// please account for lack of utf-8 support (20171128/thisisaaronland)
-	// https://github.com/jung-kurt/gofpdf/blob/cc7f4a2880e224dc55d15289863817df6d9f6893/fpdf_test.go#L1440-L1478
 	
 	if caption != "" {
 
@@ -411,6 +409,15 @@ func (pb *PictureBook) AddPicture(pagenum int, abs_path string, caption string) 
 
 		pb.PDF.SetLeftMargin(x)
 		pb.PDF.SetRightMargin(pb.Border.Right / pb.Options.DPI)
+
+		// please account for lack of utf-8 support (20171128/thisisaaronland)
+		// https://github.com/jung-kurt/gofpdf/blob/cc7f4a2880e224dc55d15289863817df6d9f6893/fpdf_test.go#L1440-L1478
+
+		// tr := pb.PDF.UnicodeTranslatorFromDescriptor("utf8")
+		// txt = tr(txt)
+
+		txt = unidecode.Unidecode(txt)
+		
 		html := pb.PDF.HTMLBasicNew()
 		html.Write(line_h, txt)
 	}
