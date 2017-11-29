@@ -11,7 +11,7 @@ import (
 )
 
 func DefaultPreProcessFunc(path string) (string, error) {
-	return path, nil
+	return "", nil
 }
 
 // https://www.daveperrett.com/articles/2012/07/28/exif-orientation-handling-is-a-ghetto/
@@ -63,7 +63,6 @@ func RotatePreProcessFunc(path string) (string, error) {
 	}
 
 	angle, _, _ := exifutil.ProcessOrientation(orientation)
-
 	rotated := exifutil.Rotate(im, angle)
 
 	return util.EncodeTempImage(rotated, format)
@@ -79,6 +78,10 @@ func HalftonePreProcessFunc(path string) (string, error) {
 
 	opts := halftone.NewDefaultHalftoneOptions()
 	dithered, err := halftone.Halftone(im, opts)
+
+	if err != nil {
+		return "", err
+	}
 
 	return util.EncodeTempImage(dithered, format)
 }
