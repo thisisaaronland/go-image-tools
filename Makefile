@@ -20,7 +20,9 @@ deps:
 	@GOPATH=$(GOPATH) go get -u "github.com/iand/salience"
 	@GOPATH=$(GOPATH) go get -u "github.com/jung-kurt/gofpdf"
 	@GOPATH=$(GOPATH) go get -u "github.com/MaxHalford/halfgone"
+	@GOPATH=$(GOPATH) go get -u "github.com/rainycape/unidecode"
 	@GOPATH=$(GOPATH) go get -u "github.com/nfnt/resize/"
+	@GOPATH=$(GOPATH) go get -u "github.com/tidwall/gjson/"
 
 vendor-deps: rmdeps deps
 	if test ! -d vendor; then mkdir vendor; fi
@@ -33,6 +35,7 @@ fmt:
 	go fmt cmd/*.go
 	go fmt halftone/*.go
 	go fmt picturebook/*.go
+	go fmt picturebook/*/*.go
 	go fmt util/*.go
 
 bin: 	self

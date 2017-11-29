@@ -1,4 +1,4 @@
-package picturebook
+package functions
 
 import (
 	"fmt"
@@ -6,44 +6,10 @@ import (
 	"github.com/straup/go-image-tools/util"
 	"io/ioutil"
 	"os"
-	"path/filepath"
 )
-
-type PictureBookFilterFunc func(string) (bool, error)
-
-type PictureBookPreProcessFunc func(string) (string, error)
-
-type PictureBookCaptionFunc func(string) (string, error)
-
-func DefaultFilterFunc(string) (bool, error) {
-	return true, nil
-}
 
 func DefaultPreProcessFunc(path string) (string, error) {
 	return path, nil
-}
-
-func DefaultCaptionFunc(path string) (string, error) {
-	return FilenameCaptionFunc(path)
-}
-
-func FilenameCaptionFunc(path string) (string, error) {
-
-	fname := filepath.Base(path)
-	return fname, nil
-}
-
-func FilenameAndParentCaptionFunc(path string) (string, error) {
-
-	root := filepath.Dir(path)
-	parent := filepath.Base(root)
-	fname := filepath.Base(path)
-
-	return filepath.Join(parent, fname), nil
-}
-
-func NoneCaptionFunc(path string) (string, error) {
-	return "", nil
 }
 
 func HalftonePreProcessFunc(path string) (string, error) {

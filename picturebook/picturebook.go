@@ -4,6 +4,8 @@ import (
 	"errors"
 	"fmt"
 	"github.com/jung-kurt/gofpdf"
+	"github.com/rainycape/unidecode"
+	"github.com/straup/go-image-tools/picturebook/functions"
 	"github.com/straup/go-image-tools/util"
 	"log"
 	"os"
@@ -18,9 +20,9 @@ type PictureBookOptions struct {
 	Height      float64
 	DPI         float64
 	Border      float64
-	Filter      PictureBookFilterFunc
-	PreProcess  PictureBookPreProcessFunc
-	Caption     PictureBookCaptionFunc
+	Filter      functions.PictureBookFilterFunc
+	PreProcess  functions.PictureBookPreProcessFunc
+	Caption     functions.PictureBookCaptionFunc
 	Debug       bool
 }
 
@@ -56,9 +58,9 @@ type PictureBook struct {
 
 func NewPictureBookDefaultOptions() PictureBookOptions {
 
-	filter := DefaultFilterFunc
-	prep := DefaultPreProcessFunc
-	capt := DefaultCaptionFunc
+	filter := functions.DefaultFilterFunc
+	prep := functions.DefaultPreProcessFunc
+	capt := functions.DefaultCaptionFunc
 
 	opts := PictureBookOptions{
 		Orientation: "P",
@@ -382,8 +384,18 @@ func (pb *PictureBook) AddPicture(pagenum int, abs_path string, caption string) 
 		cur_x = (x - r_border)
 		cur_y = (y - r_border) + (h + (r_border * 2))
 
+		// please do this in the constructor...
+		// (20171128/thisisaaronland)
+
+		font_sz, _ := pb.PDF.GetFontSize()
+		pb.PDF.SetFontSize(font_sz + 2)
+
+		_, line_h := pb.PDF.GetFontSize()
+
+		pb.PDF.SetFontSize(font_sz)
+
 		txt_x := cur_x
-		txt_y := cur_y
+		txt_y := cur_y + line_h
 
 		if pb.Options.Debug {
 			log.Printf("[%d] text at %0.2f x %0.2f (%0.2f x %0.2f)\n", pagenum, txt_x, txt_y, txt_w, txt_h)
@@ -393,7 +405,20 @@ func (pb *PictureBook) AddPicture(pagenum int, abs_path string, caption string) 
 		// pb.PDF.Rect(txt_x, txt_y, txt_w, txt_h, "FD")
 
 		pb.PDF.SetXY(txt_x, txt_y)
-		pb.PDF.Cell(txt_w, txt_h, txt)
+		// pb.PDF.Cell(txt_w, txt_h, txt)
+
+		pb.PDF.SetLeftMargin(x)
+		pb.PDF.SetRightMargin(pb.Border.Right / pb.Options.DPI)
+
+		// please account for lack of utf-8 support (20171128/thisisaaronland)
+		// https://github.com/jung-kurt/gofpdf/blob/cc7f4a2880e224dc55d15289863817df6d9f6893/fpdf_test.go#L1440-L1478
+		// tr := pb.PDF.UnicodeTranslatorFromDescriptor("utf8")
+		// txt = tr(txt)
+
+		txt = unidecode.Unidecode(txt)
+
+		html := pb.PDF.HTMLBasicNew()
+		html.Write(line_h, txt)
 	}
 
 	return nil
