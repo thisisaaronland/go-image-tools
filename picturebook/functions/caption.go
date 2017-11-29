@@ -65,12 +65,12 @@ func NoneCaptionFunc(path string) (string, error) {
 
 func FlickrArchiveCaptionFunc(path string) (string, error) {
 
-     ext := filepath.Ext(path)
+	ext := filepath.Ext(path)
 
-     img_ext := fmt.Sprintf("_o%s", ext)
-     info_ext := "_i.json"
+	img_ext := fmt.Sprintf("_o%s", ext)
+	info_ext := "_i.json"
 
-     info := strings.Replace(path, img_ext, info_ext, -1)
+	info := strings.Replace(path, img_ext, info_ext, -1)
 
 	_, err := os.Stat(info)
 
@@ -102,7 +102,7 @@ func FlickrArchiveCaptionFunc(path string) (string, error) {
 
 	rsp = gjson.GetBytes(body, "photo.id")
 
-	if !rsp.Exists(){
+	if !rsp.Exists() {
 		return "", errors.New("Missing photo ID")
 	}
 
@@ -110,7 +110,7 @@ func FlickrArchiveCaptionFunc(path string) (string, error) {
 
 	rsp = gjson.GetBytes(body, "photo.title._content")
 
-	if !rsp.Exists(){
+	if !rsp.Exists() {
 		return "", errors.New("Missing title")
 	}
 
@@ -118,7 +118,7 @@ func FlickrArchiveCaptionFunc(path string) (string, error) {
 
 	rsp = gjson.GetBytes(body, "photo.dates.taken")
 
-	if !rsp.Exists(){
+	if !rsp.Exists() {
 		return "", errors.New("Missing date")
 	}
 

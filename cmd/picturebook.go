@@ -95,12 +95,32 @@ func Picturebook() error {
 		for _, proc := range preprocess {
 
 			switch proc {
+
+			case "rotate":
+
+				processed_path, err := functions.RotatePreProcessFunc(final)
+
+				if err != nil {
+					return "", err
+				}
+
+				if processed_path == "" {
+					continue
+				}
+
+				processed = append(processed, processed_path)
+				final = processed_path
+
 			case "halftone":
 
 				processed_path, err := functions.HalftonePreProcessFunc(final)
 
 				if err != nil {
 					return "", err
+				}
+
+				if processed_path == "" {
+					continue
 				}
 
 				processed = append(processed, processed_path)
