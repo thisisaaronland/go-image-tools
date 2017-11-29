@@ -11,6 +11,9 @@ import (
 	"time"
 )
 
+// when it comes to returning strings (HTML) see also:
+// https://github.com/straup/go-image-tools/issues/7
+
 func PictureBookCaptionFuncFromString(caption string) (PictureBookCaptionFunc, error) {
 
 	var capt PictureBookCaptionFunc
