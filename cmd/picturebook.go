@@ -30,6 +30,7 @@ func Picturebook() error {
 	var border = flag.Float64("border", 0.01, "...")
 	var caption = flag.String("caption", "default", "...")
 	var filename = flag.String("filename", "picturebook.pdf", "...")
+	var target = flag.String("target", "", "...")
 	var debug = flag.Bool("debug", false, "...")
 
 	var include picturebook.RegexpFlag
@@ -41,6 +42,17 @@ func Picturebook() error {
 	flag.Var(&preprocess, "pre-process", "...")
 
 	flag.Parse()
+
+	switch *target {
+		case "":
+			// pass
+		case "cooperhewitt":
+			*caption = *target
+		case "flickr":
+			*caption = *target
+		default:
+			log.Fatal("Unknown or invalid target")
+	}
 
 	opts := picturebook.NewPictureBookDefaultOptions()
 	opts.Orientation = *orientation
