@@ -3,7 +3,7 @@ package util
 import (
 	"bufio"
 	"image"
-	_ "image/gif"
+	"image/gif"
 	_ "image/jpeg"
 	_ "image/png"
 	"io"
@@ -35,4 +35,8 @@ func DecodeImage(path string) (image.Image, string, error) {
 func DecodeImageFromReader(fh io.Reader) (image.Image, string, error) {
 
 	return image.Decode(bufio.NewReader(fh))
+}
+
+func DecodeAnimatedGIFFromReader(fh io.Reader) (*gif.GIF, error) {
+     return gif.DecodeAll(fh)
 }
