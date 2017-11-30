@@ -44,14 +44,14 @@ func Picturebook() error {
 	flag.Parse()
 
 	switch *target {
-		case "":
-			// pass
-		case "cooperhewitt":
-			*caption = *target
-		case "flickr":
-			*caption = *target
-		default:
-			log.Fatal("Unknown or invalid target")
+	case "":
+		// pass
+	case "cooperhewitt":
+		*caption = *target
+	case "flickr":
+		*caption = *target
+	default:
+		log.Fatal("Unknown or invalid target")
 	}
 
 	opts := picturebook.NewPictureBookDefaultOptions()

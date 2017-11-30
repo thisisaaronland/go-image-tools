@@ -259,11 +259,8 @@ func (pb *PictureBook) AddPicture(pagenum int, abs_path string, caption string) 
 
 	info.SetDpi(pb.Options.DPI)
 
-	// w := info.Width() * pb.Options.DPI
-	// h := info.Height() * pb.Options.DPI
-
-	w := float64(dims.Max.X) * pb.Options.DPI
-	h := float64(dims.Max.Y) * pb.Options.DPI
+	w := float64(dims.Max.X)
+	h := float64(dims.Max.Y)
 
 	if pb.Options.Debug {
 		log.Printf("[%d] %s %02.f x %02.f\n", pagenum, abs_path, w, h)
@@ -288,46 +285,31 @@ func (pb *PictureBook) AddPicture(pagenum int, abs_path string, caption string) 
 
 	for {
 
-		if w >= max_w || h >= max_h {
+		if w > max_w || h > max_h {
 
-			if w > h {
+			// log.Printf("[%d] WTF 1 %0.2f x %0.2f (%0.2f x %0.2f) \n", pagenum, w, h, max_w, max_h)
 
-				ratio := max_w / w
-				w = max_w
-				h = h * ratio
-
-			} else if w > max_w {
+			if w > max_w {
 
 				ratio := max_w / w
 				w = max_w
 				h = h * ratio
+
 			}
 
-			if h > w {
+			if h > max_h {
 
 				ratio := max_h / h
 				w = w * ratio
 				h = max_h
 
-			} else if h > max_h {
-
-				ratio := max_h / h
-				w = w * ratio
-				h = max_h
-
-			} else {
 			}
 
-		}
-
-		if pb.Options.Debug {
-			log.Printf("[%d] w: %0.2f (max w: %0.2f)  h: %0.2f (max h: %0.2f)\n", pagenum, w, max_w, h, max_h)
 		}
 
 		if w <= max_w && h <= max_h {
 			break
 		}
-
 	}
 
 	if w < max_w {
@@ -337,6 +319,7 @@ func (pb *PictureBook) AddPicture(pagenum int, abs_path string, caption string) 
 	}
 
 	// if max_h > max_w && h < (max_h - pb.Border.Top) {
+	
 	if h < (max_h - pb.Border.Top) {
 
 		y = y + pb.Border.Top
